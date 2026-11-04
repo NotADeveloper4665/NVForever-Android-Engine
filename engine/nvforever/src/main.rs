@@ -2099,6 +2099,6 @@ mod tests {
 // The desktop executable calls run() through src/bin/nvforever.rs instead.
 #[cfg(target_os = "android")]
 #[bevy_main]
-pub fn android_main() {
+pub fn main() {
     let _ = run();
 }
