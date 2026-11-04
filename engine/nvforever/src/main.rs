@@ -1014,13 +1014,14 @@ pub fn run() -> AppExit {
             None => return fail(format!("--fog {f}: expected near,far")),
         }
     }
-    let msaa = match args.msaa {
+    // Bevy currently has device-specific Android MSAA instability; keep it disabled on mobile.
+    let msaa = if cfg!(target_os = "android") { Msaa::Off } else { match args.msaa {
         1 => Msaa::Off,
         2 => Msaa::Sample2,
         4 => Msaa::Sample4,
         8 => Msaa::Sample8,
         n => return fail(format!("--msaa {n}: expected 1, 2, 4 or 8")),
-    };
+    }};
     let Some(grass_light) = parse_vec::<2>(&args.grass_light) else {
         return fail(format!("--grass-light {}: expected ambient,sun", args.grass_light));
     };
@@ -1163,6 +1164,8 @@ pub fn run() -> AppExit {
         }
     };
     let mut app = App::new();
+    #[cfg(target_os = "android")]
+    app.insert_resource(bevy::winit::WinitSettings::mobile());
     // A command for an entity that is gone is logged, not fatal (stray_commands.rs).
     app.set_error_handler(stray_commands::handler);
     app.add_plugins(
@@ -1183,7 +1186,8 @@ pub fn run() -> AppExit {
                 // Scale factor 1 so screenshots are exactly --size pixels on any display.
                 primary_window: Some(Window {
                     title: "NVForever".into(),
-                    mode: args.window.mode(),
+                    // Android is a single-surface game: start edge-to-edge instead of requesting a desktop window.
+        mode: if cfg!(target_os = "android") { bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Primary) } else { args.window.mode() },
                     resolution: bevy::window::WindowResolution::new(w, h).with_scale_factor_override(1.0),
                     position: args.window_at.map_or(WindowPosition::Automatic, WindowPosition::At),
                     // Taking over a load: shown once its loading screen is up (handoff.rs).
