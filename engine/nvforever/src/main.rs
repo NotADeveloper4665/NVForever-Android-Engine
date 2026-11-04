@@ -790,7 +790,7 @@ fn command_line() -> Vec<String> {
     COMMAND_LINE.get().map_or_else(|| std::env::args().skip(1).collect(), |a| a[1..].to_vec())
 }
 
-fn main() -> AppExit {
+pub fn run() -> AppExit {
     let mut line = with_default_mode(std::env::args().collect());
     if let Some(dir) = std::env::current_exe().ok().and_then(|e| e.parent().map(std::path::Path::to_path_buf)) {
         line = with_schemas_beside(line, &dir);
@@ -2088,4 +2088,13 @@ mod tests {
         // The 16:9 angle the reference frames matched (docs/spec-notes/camera.md).
         assert!((horizontal(16.0 / 9.0) - 91.31).abs() < 0.01);
     }
+}
+
+
+// Bevy generates the Android GameActivity/JNI entry point from this function.
+// The desktop executable calls run() through src/bin/nvforever.rs instead.
+#[cfg(target_os = "android")]
+#[bevy_main]
+pub fn android_main() {
+    let _ = run();
 }
