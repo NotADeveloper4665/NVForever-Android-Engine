@@ -1,10 +1,21 @@
 [package]
+autobins = false
 name = "nvforever"
 description = "NVForever: the game. At milestone M3 a free-camera explorer of the world (terrain and objects)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
+
+# Android needs a shared library; desktop keeps a small executable wrapper.
+[lib]
+name = "nvforever"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "nvforever"
+path = "src/bin/nvforever.rs"
 
 [dependencies]
 bevy.workspace = true
