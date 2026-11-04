@@ -446,6 +446,25 @@ struct Stats {
     frames_at_open: AtomicU64,
 }
 
+
+#[cfg(target_os = "android")]
+fn android_audio_lifecycle(
+    mut lifecycle: MessageReader<bevy::window::AppLifecycle>,
+    sinks: Query<&AudioSink>,
+) {
+    for event in lifecycle.read() {
+        match event {
+            bevy::window::AppLifecycle::Suspended => {
+                for sink in &sinks { sink.pause(); }
+            }
+            bevy::window::AppLifecycle::Running => {
+                for sink in &sinks { sink.play(); }
+            }
+            _ => {}
+        }
+    }
+}
+
 /// The output and the playing of every `AudioPlayer<T>` registered with [`AddAudioSource`].
 pub struct AudioOutPlugin;
 
@@ -475,6 +494,10 @@ impl Plugin for AudioOutPlugin {
             .init_resource::<GlobalVolume>()
             .init_resource::<SoundSpeed>()
             .add_systems(Update, test_reopen)
+            // Android suspends the activity without necessarily terminating the process.
+            // Pause every active sink while backgrounded and resume them with the activity.
+            #[cfg(target_os = "android")]
+            .add_systems(Update, android_audio_lifecycle)
             .add_systems(PostUpdate, follow_sound_speed.before(AudioOutSystems))
             .add_systems(Last, report)
             .add_audio_source::<AudioSource>()
