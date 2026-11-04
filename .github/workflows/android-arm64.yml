@@ -62,7 +62,7 @@ jobs:
         working-directory: engine
         run: cargo ndk -t arm64-v8a -P 26 -o ../artifacts/jniLibs build --release --lib -p nvforever
       - name: Commit Android target lockfile resolution
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           if ! git diff --quiet -- engine/Cargo.lock; then
             git config user.name "github-actions[bot]"
