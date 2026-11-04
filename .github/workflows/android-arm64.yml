@@ -1,0 +1,70 @@
+name: android-arm64
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "engine/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/android-arm64.yml"
+  pull_request:
+    paths:
+      - "engine/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/android-arm64.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-arm64-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "ndk;27.2.12479018"
+      - name: Set Android NDK environment
+        run: |
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
+          echo "$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_PATH"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "engine -> target"
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+      - name: Verify GameActivity is the selected Android backend
+        working-directory: engine
+        run: |
+          cargo tree --locked --target aarch64-linux-android -e features | tee /tmp/android-features.txt
+          grep -q 'android-game-activity' /tmp/android-features.txt
+          if grep -q 'android-native-activity' /tmp/android-features.txt; then
+            echo "Both Android activity backends are enabled; this is unsupported." >&2
+            exit 1
+          fi
+      - name: Build ARM64 native engine library
+        working-directory: engine
+        run: cargo ndk -t arm64-v8a -P 26 -o ../artifacts/jniLibs build --release --locked --lib -p nvforever
+      - name: Upload native engine library
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvforever-engine-android-arm64
+          path: artifacts/jniLibs/arm64-v8a/libnvforever.so
+          if-no-files-found: error
+          retention-days: 14
