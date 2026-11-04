@@ -494,14 +494,14 @@ impl Plugin for AudioOutPlugin {
             .init_resource::<GlobalVolume>()
             .init_resource::<SoundSpeed>()
             .add_systems(Update, test_reopen)
-            // Android suspends the activity without necessarily terminating the process.
-            // Pause every active sink while backgrounded and resume them with the activity.
-            #[cfg(target_os = "android")]
-            .add_systems(Update, android_audio_lifecycle)
             .add_systems(PostUpdate, follow_sound_speed.before(AudioOutSystems))
             .add_systems(Last, report)
             .add_audio_source::<AudioSource>()
             .init_asset_loader::<AudioLoader>();
+        // Android suspends the activity without necessarily terminating the process.
+        // Pause every active sink while backgrounded and resume them with the activity.
+        #[cfg(target_os = "android")]
+        app.add_systems(Update, android_audio_lifecycle);
     }
 }
 
