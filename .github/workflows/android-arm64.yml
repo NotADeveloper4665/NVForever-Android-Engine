@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-arm64-${{ github.ref }}
@@ -52,7 +52,7 @@ jobs:
       - name: Verify GameActivity is the selected Android backend
         working-directory: engine
         run: |
-          cargo tree --locked --target aarch64-linux-android -e features | tee /tmp/android-features.txt
+          cargo tree --target aarch64-linux-android -e features | tee /tmp/android-features.txt
           grep -q 'android-game-activity' /tmp/android-features.txt
           if grep -q 'android-native-activity' /tmp/android-features.txt; then
             echo "Both Android activity backends are enabled; this is unsupported." >&2
@@ -60,7 +60,16 @@ jobs:
           fi
       - name: Build ARM64 native engine library
         working-directory: engine
-        run: cargo ndk -t arm64-v8a -P 26 -o ../artifacts/jniLibs build --release --locked --lib -p nvforever
+        run: cargo ndk -t arm64-v8a -P 26 -o ../artifacts/jniLibs build --release --lib -p nvforever
+      - name: Commit Android target lockfile resolution
+        run: |
+          if ! git diff --quiet -- engine/Cargo.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add engine/Cargo.lock
+            git commit -m "Update engine lockfile for Android GameActivity"
+            git push
+          fi
       - name: Upload native engine library
         uses: actions/upload-artifact@v4
         with:
