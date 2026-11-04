@@ -193,10 +193,10 @@ struct Args {
     #[arg(long, num_args = 1.., default_values_t = MASTERS.map(String::from))]
     plugins: Vec<String>,
     /// Record schema directory.
-    #[arg(long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas/fnv"))]
+    #[arg(long, env = "NVFOREVER_ESM_SCHEMA", default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas/fnv"))]
     esm_schema: PathBuf,
     /// NIF schema directory.
-    #[arg(long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas/nif"))]
+    #[arg(long, env = "NVFOREVER_NIF_SCHEMA", default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/../../schemas/nif"))]
     nif_schema: PathBuf,
     /// Worldspace Editor ID or FormID.
     #[arg(long, default_value = "WastelandNV")]
