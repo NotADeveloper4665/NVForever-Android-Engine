@@ -1,19 +1,19 @@
-//! nvforever — the NVForever game binary. Started with no argument that chooses a world or
-//! a mode (`MODE_ARGS`; e.g. double-clicked, or with `--data` and window or sound switches
-//! only) it is the game on its main menu, as `--play --menu`. `--explore`, or `--cell`,
-//! `--pos` and the other world arguments without `--play`, open the free-camera explorer:
-//! terrain and objects of a worldspace from the user's own game data, streamed around the
-//! camera (docs/design/layer3.md). Read-only: plugins and archives are only read.
-//! Without `--esm-schema`, `--nif-schema` and NVF_PLAY_SCRIPT_FUNCTIONS the schemas are
-//! looked for in `schemas/` beside the program (the release archive's layout,
-//! tools/release/README-release.md), else in the build's checkout.
-//!
-//! Keys: W/A/S/D move, Q/E down/up, Shift faster, right mouse drag look, wheel speed,
-//! F12 screenshot, Esc quit. With `--play` the camera is the player instead (Layer 4,
-//! `nvf-play`: walking with collision, activation, menus; docs/design/layer4-play.md),
-//! Esc opens the pause menu (Continue / Save / Load / Settings / Quit; the settings page
-//! switches what `settings.rs` and `nvf_play::settings` list while the game runs) and
-//! closes the open menu. `--play --menu` opens on the main menu (`nvf_play::main_menu`).
+// nvforever — the NVForever game binary. Started with no argument that chooses a world or
+// a mode (`MODE_ARGS`; e.g. double-clicked, or with `--data` and window or sound switches
+// only) it is the game on its main menu, as `--play --menu`. `--explore`, or `--cell`,
+// `--pos` and the other world arguments without `--play`, open the free-camera explorer:
+// terrain and objects of a worldspace from the user's own game data, streamed around the
+// camera (docs/design/layer3.md). Read-only: plugins and archives are only read.
+// Without `--esm-schema`, `--nif-schema` and NVF_PLAY_SCRIPT_FUNCTIONS the schemas are
+// looked for in `schemas/` beside the program (the release archive's layout,
+// tools/release/README-release.md), else in the build's checkout.
+//
+// Keys: W/A/S/D move, Q/E down/up, Shift faster, right mouse drag look, wheel speed,
+// F12 screenshot, Esc quit. With `--play` the camera is the player instead (Layer 4,
+// `nvf-play`: walking with collision, activation, menus; docs/design/layer4-play.md),
+// Esc opens the pause menu (Continue / Save / Load / Settings / Quit; the settings page
+// switches what `settings.rs` and `nvf_play::settings` list while the game runs) and
+// closes the open menu. `--play --menu` opens on the main menu (`nvf_play::main_menu`).
 
 mod activators;
 mod nif_mirror;
