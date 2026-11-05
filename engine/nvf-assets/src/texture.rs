@@ -428,7 +428,10 @@ impl TextureCache {
                 return Some(h);
             }
         }
-        let bc = formats.is_none_or(|f| f.0.contains(CompressedImageFormats::BC));
+        // Missing renderer capability data is not proof of BC support. Prefer the
+        // portable RGBA8 CPU fallback on Android/early startup rather than risking
+        // an unsupported compressed-texture upload.
+        let bc = formats.is_some_and(|f| f.0.contains(CompressedImageFormats::BC));
         let read = self.ahead.remove(&path).map(|(bytes, _)| bytes).or_else(|| data.read(&path));
         let result = match read {
             None => Err("not in any archive".to_string()),
