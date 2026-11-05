@@ -10,7 +10,7 @@ use bevy::image::{
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::asset::AssetHandleProvider;
-use fnv_dds::{to_rgba8, Dds, Format};
+use fnv_dds::{decode_blocks, to_rgba8, Dds, Format};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::{Arc, Mutex};
@@ -151,20 +151,35 @@ fn dds_image_unguarded(bytes: &[u8], srgb: bool, bc_supported: bool) -> Result<I
     let (format, data) = match dds.format {
         Format::Dxt1 | Format::Dxt3 | Format::Dxt5 => {
             if !bc_supported {
-                return Err("GPU lacks BC texture support".into());
+                // Mali/Android devices commonly expose Vulkan without BC sampling. Decode
+                // every mip on the CPU instead of rejecting the texture; this preserves
+                // the original mip chain and avoids a GPU-specific compressed upload.
+                let mut rgba = Vec::new();
+                for (mip, level) in levels.iter().enumerate() {
+                    let (mw, mh) = dds.header.level_dims(mip as u32);
+                    rgba.extend(
+                        decode_blocks(dds.format, mw, mh, level)
+                            .ok_or_else(|| format!("could not decode {} mip {mip}", dds.format.name()))?,
+                    );
+                }
+                (
+                    if srgb { TextureFormat::Rgba8UnormSrgb } else { TextureFormat::Rgba8Unorm },
+                    rgba,
+                )
+            } else {
+                if w % 4 != 0 || h % 4 != 0 {
+                    return Err(format!("{w}x{h} block-compressed texture is not a multiple of 4"));
+                }
+                let f = match (dds.format, srgb) {
+                    (Format::Dxt1, true) => TextureFormat::Bc1RgbaUnormSrgb,
+                    (Format::Dxt1, false) => TextureFormat::Bc1RgbaUnorm,
+                    (Format::Dxt3, true) => TextureFormat::Bc2RgbaUnormSrgb,
+                    (Format::Dxt3, false) => TextureFormat::Bc2RgbaUnorm,
+                    (_, true) => TextureFormat::Bc3RgbaUnormSrgb,
+                    (_, false) => TextureFormat::Bc3RgbaUnorm,
+                };
+                (f, levels.concat())
             }
-            if w % 4 != 0 || h % 4 != 0 {
-                return Err(format!("{w}x{h} block-compressed texture is not a multiple of 4"));
-            }
-            let f = match (dds.format, srgb) {
-                (Format::Dxt1, true) => TextureFormat::Bc1RgbaUnormSrgb,
-                (Format::Dxt1, false) => TextureFormat::Bc1RgbaUnorm,
-                (Format::Dxt3, true) => TextureFormat::Bc2RgbaUnormSrgb,
-                (Format::Dxt3, false) => TextureFormat::Bc2RgbaUnorm,
-                (_, true) => TextureFormat::Bc3RgbaUnormSrgb,
-                (_, false) => TextureFormat::Bc3RgbaUnorm,
-            };
-            (f, levels.concat())
         }
         other => {
             let mut out = Vec::new();
